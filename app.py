@@ -1,13 +1,24 @@
-# Versionsbeschreibung V9: einfache Kompetenzanalyse Letztversion KSM + Überarbeitung Einschätzung Sicherheit mittels Bewertungskriterien + Kurzbereicht & Detailergebnisse + Niveau "nicht relevant" + zusammengefasste NQR-Deskriptoren als zusätliche Entscheidungshilfe in Prompt + farbliche unterlegung sicherheit (neuer parser)
+# Versionsbeschreibung V10: 
+# einfache Kompetenzanalyse Letztversion KSM 
+# + Überarbeitung Einschätzung Sicherheit mittels Bewertungskriterien 
+# + Kurzbereicht & Detailergebnisse 
+# + Niveau "nicht relevant" 
+# + zusammengefasste NQR-Deskriptoren als zusätliche Entscheidungshilfe in Prompt 
+# + farbliche unterlegung sicherheit (neuer parser pattern_detail)
+# docx als zusätzliches Dateiupload-Format
+
+
 import streamlit as st
-import hashlib
 import openai
 from dotenv import load_dotenv
 import os
 import json
 import re
 import pandas as pd
-import plotly.express as px 
+import plotly.express as px
+from docx import Document
+from io import BytesIO
+from typing import Union
 
 load_dotenv()
 
@@ -42,10 +53,97 @@ bereich_map = {
     
 }
 
-uploaded_file = st.file_uploader("Arbeitsplatzbeschreibung hochladen", type=["txt"])
+from docx import Document
+import re
+from typing import Union
+
+def parse_apbeschreibung_docx(file: Union[str, BytesIO], filename: str = ""):
+    doc = Document(file)
+    lines = []
+
+    # Absätze
+    for para in doc.paragraphs:
+        if para.text.strip():
+            lines.append(para.text.strip())
+
+    # Tabelleninhalte ergänzen
+    for table in doc.tables:
+        for row in table.rows:
+            for cell in row.cells:
+                if cell.text.strip():
+                    lines.append(cell.text.strip())
+
+    def extract_section(start_markers, end_markers=None):
+        start_index = None
+        end_index = None
+        for i, line in enumerate(lines):
+            if any(start.lower() in line.lower() for start in start_markers) and start_index is None:
+                start_index = i
+        if start_index is not None and end_markers:
+            for i in range(start_index + 1, len(lines)):
+                if any(end.lower() in lines[i].lower() for end in end_markers):
+                    end_index = i
+                    break
+        if start_index is not None:
+            return "\n".join(lines[start_index + 1:end_index]).strip() if end_index else "\n".join(lines[start_index + 1:]).strip()
+        return ""
+
+    parsed = {
+        "verwendung": "",
+        "bezeichnung": extract_section(["2.", "FUNKTION DES ARBEITSPLATZES"], ["5."]),
+        "aufgaben": extract_section(["5.", "AUFGABEN DES ARBEITSPLATZES"], ["6."]),
+        "ziele": extract_section(["6.", "ZIELE DES ARBEITSPLATZES"], ["7."]),
+        "taetigkeiten": extract_section(["7.", "KATALOG", "TÄTIGKEITEN"], ["12.", "13.", "SONSTIGE", "BESONDERE"])
+    }
+
+    if not parsed["verwendung"] and filename:
+        match = re.search(r"([A-Z]\d[_/-]\d)", filename.upper())
+        if match:
+            parsed["verwendung"] = match.group(1).replace("-", "/")
+
+    return parsed
+
+
+uploaded_file = st.file_uploader("Arbeitsplatzbeschreibung hochladen", type=["txt", "docx"])
 
 if uploaded_file:
-    text = uploaded_file.read().decode("UTF-8")
+    file_extension = uploaded_file.name.split('.')[-1].lower()
+
+    if file_extension == "txt":
+        text = uploaded_file.read().decode("utf-8")
+    elif file_extension == "docx":
+        parsed = parse_apbeschreibung_docx(uploaded_file, uploaded_file.name)
+        text = f"""
+Verwendung: {parsed['verwendung']}
+Bezeichnung: {parsed['bezeichnung']}
+
+Aufgaben:
+{parsed['aufgaben']}
+
+Ziele:
+{parsed['ziele']}
+
+Tätigkeiten:
+{parsed['taetigkeiten']}
+""".strip()
+    else:
+        st.error("Nur TXT und DOCX werden aktuell unterstützt.")
+        st.stop()
+
+    st.subheader("Vorprüfung: Extrahierte Inhalte aus der Arbeitsplatzbeschreibung")
+
+    st.markdown(f"""
+- **Verwendung:** {parsed['verwendung']}
+- **Bezeichnung (Funktion):** {parsed['bezeichnung']}
+- **Aufgaben:**  
+{parsed['aufgaben']}
+- **Ziele:**  
+{parsed['ziele']}
+- **Tätigkeiten:**  
+{parsed['taetigkeiten']}
+""")
+
+
     
     if st.button("Analyse starten"):
         prompt = f"""
@@ -161,7 +259,7 @@ Formatiere die Ausgabe so (keine andere Ausgabe wie z.B. zusammenfassende Tabell
                 for _, row in data[data["Bereich"] == bereich].iterrows():
                     st.markdown(f"{row['Kompetenz']}: {row['Ausprägung']}")
 
-            st.subheader("Detailergebnisse der Kompetenzanalyse:")
+            st.header("Detailergebnisse der Kompetenzanalyse:")
 
             
             pattern_detail = r"\*\*Kompetenz:\*\*\s*(.*?)\s+\*\*Niveau:\*\*\s*(\d+)\s+\*\*Begründung:\*\*\s*(.*?)\s+\*\*Antwortsicherheit:\*\*\s*(\d)\s+\*\*Begründung Antwortsicherheit:\*\*\s*(.*?)(?=\s+\*\*Kompetenz:|\Z)"
