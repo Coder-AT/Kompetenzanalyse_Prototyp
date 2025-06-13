@@ -6,6 +6,8 @@
 # + zusammengefasste NQR-Deskriptoren als zusätliche Entscheidungshilfe in Prompt 
 # + farbliche unterlegung sicherheit (neuer parser pattern_detail)
 # docx als zusätzliches Dateiupload-Format
+# Kompetenzbereiche korrekt benannt
+# farben an Heidi Grafik angepasst
 
 
 import streamlit as st
@@ -38,18 +40,18 @@ kompetenzmodell_text = json.dumps(kompetenzmodell, ensure_ascii=False, indent=2,
 
 # kompetenzbereiche definieren
 bereich_map = {
-    "Kollaborationskompetenz": "Soziale Kompetenzen",
-    "Kommunikationskompetenz": "Soziale Kompetenzen",
-    "Resilienz": "Personale Kompetenzen",
-    "Problemlösungskompetenz": "Methodenkompetenzen",
-    "Lernkompetenz": "Personale Kompetenzen",
-    "Serviceorientierung": "Soziale Kompetenzen",
-    "Prozess- und Systemkompetenz": "Methodenkompetenzen",
-    "Intrapreneurship": "Personale Kompetenzen",
-    "Selbstmanagement": "Personale Kompetenzen",
-    "Daten- und KI-Kompetenz": "Methodenkompetenzen",
-    "Führen": "Soziale Kompetenzen",
-    "Kritisches Denken": "Personale Kompetenzen"
+    "Kollaboration": "Sozialkompetenz",
+    "Kommunikation": "Sozialkompetenz",
+    "Resilienz": "Selbstkompetenz",
+    "Problemlösen": "Selbstkompetenz",
+    "Lernen": "Selbstkompetenz",
+    "Serviceorientierung": "Methodenkompetenz",
+    "Prozess- und Systemkompetenz": "Methodenkompetenz",
+    "Intrapreneurship": "Methodenkompetenz",
+    "Selbstmanagement": "Selbstkompetenz",
+    "Daten- und KI-Kompetenz": "Methodenkompetenz",
+    "Führen": "Sozialkompetenz",
+    "Kritisches Denken": "Selbstkompetenz"
     
 }
 
@@ -239,25 +241,52 @@ Formatiere die Ausgabe so (keine andere Ausgabe wie z.B. zusammenfassende Tabell
 
             fig = px.bar_polar(data, r="Ausprägung", theta="Kompetenz", color="Bereich",
                                 color_discrete_map={
-                                    "Methodenkompetenzen": "red",
-                                    "Soziale Kompetenzen": "green",
-                                    "Personale Kompetenzen": "blue",
+                                    "Methodenkompetenz": "#EAC1B0",
+                                    "Sozialkompetenz": "#CAEDFB",
+                                    "Selbstkompetenz": "#FFFFBA",
                                     "Sonstige Kompetenzen": "grey"
                                 })
             
             #fig.update_traces(width=30)
             fig.update_layout(polar=dict(
                 radialaxis=dict(showticklabels=False, showgrid=False, showline=False, range=[0,3]),
-                angularaxis=dict(showticklabels=True, showgrid=False)
+                angularaxis=dict(showticklabels=True, showgrid=False, tickfont=dict(size=14))
                 )
             )
 
             st.plotly_chart(fig)
 
+            farben = {
+                "Sozialkompetenz": "#CAEDFB",
+                "Selbstkompetenz": "#FFFFBA",
+                "Methodenkompetenz": "#EAC1B0"
+            }
+            
+            col1, col2, col3 = st.columns([3, 3, 4])
+            bereichs_spalten = {
+                "Sozialkompetenz": col1,
+                "Selbstkompetenz": col2,
+                "Methodenkompetenz": col3
+            }
+
             for bereich in data["Bereich"].unique():
-                st.markdown(f"**{bereich}**")
+                spalte = bereichs_spalten[bereich]
+                farbe = farben.get(bereich, "#ffffff")  # fallback auf Weiß
+
+                # Inhalte sammeln und in HTML umwandeln
+                inhalte = ""
                 for _, row in data[data["Bereich"] == bereich].iterrows():
-                    st.markdown(f"{row['Kompetenz']}: {row['Ausprägung']}")
+                    inhalte += f"<p>{row['Kompetenz']}: {row['Ausprägung']}</p>\n"
+
+                html = f"<div style='background-color:{farbe}; padding:10px; border-radius:10px'>"
+                html += f"<h4>{bereich}</h4>"
+                html += inhalte
+                html += "</div>"
+
+                with spalte:
+                    st.markdown(html, unsafe_allow_html=True)
+
+
 
             st.header("Detailergebnisse der Kompetenzanalyse:")
 
