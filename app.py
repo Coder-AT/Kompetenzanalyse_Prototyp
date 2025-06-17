@@ -186,10 +186,12 @@ Nutze folgende Orientierung zur Einschätzung des passenden Kompetenzniveaus:
 Begründe deine Entscheidung klar: 
 Welche Anforderung(en) in der Arbeitsplatzbeschreibung führen zur Wahl dieses Niveaus.
 
-Gib bei jeder Kompetenz für die Einschätzung des Niveaus eine Antwortsicherheit zwischen 1 (sehr unsicher) und 5 (sehr sicher) an. Begründe diese Einschätzung. Beziehe dich dabei auf folgende Kriterien:
+Gib bei jeder Kompetenz für die Einschätzung des Niveaus eine Antwortsicherheit zwischen 1 (sehr unsicher) und 5 (sehr sicher) an. Begründe diese Einschätzung und gib bei Unsicherheit bei der Entscheidung zwischen zwei Niveaus die beiden Niveaus an. Beziehe dich dabei auf folgende Kriterien:
 - Wie klar ist die Tätigkeitsbeschreibung im Hinblick auf diese Kompetenz?
 - Wie gut passt die Beschreibung zu den Merkmalen der Kompetenzniveaus?
 - Gibt es alternative Interpretationen, die zu einem anderen Niveau führen könnten? 
+
+Bezeichne bei der Ausgabe in den Begründungstexten (sowohl bei der Begründung des gewählten Niveaus, als auch bei der Begründung der Antwortsicherheit) "Niveau" oder "Niveaus" immer als "Ausprägung"
 
 Formatiere die Ausgabe so (keine andere Ausgabe wie z.B. zusammenfassende Tabellen ganz am Ende deines Outputs): 
 **Kompetenz:** [Name] 
@@ -204,7 +206,7 @@ Formatiere die Ausgabe so (keine andere Ausgabe wie z.B. zusammenfassende Tabell
             model="gpt-4.1-2025-04-14",
             messages=[{"role": "user", "content": prompt}],
             temperature=0,
-            max_tokens=3000
+            max_tokens=3500
         )
 
         gpt_output = response.choices[0].message.content
@@ -249,7 +251,7 @@ Formatiere die Ausgabe so (keine andere Ausgabe wie z.B. zusammenfassende Tabell
             
             #fig.update_traces(width=30)
             fig.update_layout(polar=dict(
-                radialaxis=dict(showticklabels=False, showgrid=False, showline=False, range=[0,3]),
+                radialaxis=dict(tickmode='array', tickvals=[1, 2, 3], ticktext=['1', '2', '3'], tickfont=dict(color='grey', size=14), showticklabels=True, showgrid=False, showline=False, range=[0,3]),
                 angularaxis=dict(showticklabels=True, showgrid=False, tickfont=dict(size=14))
                 )
             )
@@ -306,7 +308,7 @@ Formatiere die Ausgabe so (keine andere Ausgabe wie z.B. zusammenfassende Tabell
                     sicherheit = int(sicherheit)
                     st.markdown(f"""
 ### {kompetenz}
-**Niveau:** {niveau}<br>
+**Ausprägung:** {niveau}<br>
 **Begründung:** {begruendung.strip()}
 {sicherheit_farbbox(sicherheit)}
 <small><i>{begruendung_sicherheit.strip().rstrip("-")}</i></small><br>
