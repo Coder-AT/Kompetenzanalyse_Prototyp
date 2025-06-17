@@ -195,7 +195,7 @@ Bezeichne bei der Ausgabe in den Begründungstexten (sowohl bei der Begründung 
 
 Formatiere die Ausgabe so (keine andere Ausgabe wie z.B. zusammenfassende Tabellen ganz am Ende deines Outputs): 
 **Kompetenz:** [Name] 
-**Ausprägung:** [Zahl]
+**Niveau:** [Zahl]
 **Begründung:** [Text]
 **Antwortsicherheit:** [Zahl]
 **Begründung Antwortsicherheit:** [Text]
